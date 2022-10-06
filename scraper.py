@@ -16,3 +16,7 @@ driver.get("https://www.finanzen.net/")
 # extract content
 content = driver.page_source
 soup = BeautifulSoup(content)
+
+for link in soup.find_all('a'):
+    print(link.get('href'))
+
