@@ -11,7 +11,7 @@ chromedriver_autoinstaller.install()  # Check if the current version of chromedr
 
 # start browser session
 driver = webdriver.Chrome()
-driver.get("https://www.finanzen.net/")
+driver.get("http://www.ryanhowerter.net/colors.php")
 
 # extract content
 content = driver.page_source
