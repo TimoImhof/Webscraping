@@ -47,7 +47,7 @@ for j in links:
 #print(upperframe)
 
 data = pd.DataFrame(upperframe, columns=['statement', 'link', 'date_and_author', 'title'])
-print(data['title'])
+#print(data['title'])
 data.plot(x = 'statement', y = 'date_and_author', kind = 'scatter')
 plt.show()
 
@@ -56,3 +56,8 @@ f = open(filename,'w')
 headers = 'Statement, Link, Date, Source, Label\n'
 f.write(headers)
 f.close()
+
+num_sec = time.time()
+date = time.gmtime(num_sec)
+
+print(date.tm_year, date.tm_mday, date.tm_mon)
