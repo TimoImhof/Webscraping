@@ -22,6 +22,11 @@ def create_new_link(year, month, day=None):
 
 
 def load_next_day(soup, is_new_format):
+    """  Takes Beautifulsoup object and boolean which indicates the date format.
+     Extracts the current date of the loaded webpage and increments it:\n
+     - old date format: increment per one month
+     - new date format: increment per one day
+     Returns new link part containing the actualized date."""
     date_string = soup.find('h2', attrs={'class': 'archive__headline'}).text
 
     try:
@@ -42,7 +47,7 @@ def load_next_day(soup, is_new_format):
 
 
 def extract_all(soup):
-    """ TODO: implement"""
+    """ Takes Beautifulsoup object and extracts all article links on a webpage and returns them in a list."""
     block = soup.find_all('a', attrs={'class': 'teaser-xs__link'})
     links = []
     for article_links in block:
@@ -50,7 +55,7 @@ def extract_all(soup):
     return links
 
 def load_page(url_1, url_2):
-    """ TODO: """
+    """ Takes url as two parts strings and sends request to webpage."""
     url = url_1 + url_2
     try:
         time.sleep(2)
