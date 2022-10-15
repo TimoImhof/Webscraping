@@ -72,13 +72,14 @@ def load_page(url_1, url_2):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2021-06-01'
+url_2 = '?datum=2022-10-14'
 new_date_format = False
-actual_date = date.today()
-search_date =  datetime.strptime('Januar 2010', '%B %Y')
+actual_date = datetime.strptime('15. Oktober 2022', '%d. %B %Y')
+search_date = datetime.strptime('14. Oktober 2022', '%d. %B %Y')
+
 '''code structure'''
 
-while search_date is not actual_date:
+while search_date.date() != actual_date.date():
 
     page = load_page(url_1, url_2)
     soup = BeautifulSoup(page.text, "html.parser")
