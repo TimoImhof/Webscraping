@@ -41,25 +41,22 @@ def load_next_day(soup, is_new_format):
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
 
-def extract_all():
+def extract_all(soup):
     """ TODO: implement"""
-    pass
-
+    block = soup.find_all('a', attrs={'class': 'teaser-xs__link'})
+    links = []
+    for article_links in block:
+        links.append(article_links['href'])
+    return links
 
 def load_page(url_1, url_2):
     """ TODO: """
     url = url_1 + url_2
     try:
-        # this might throw an exception if something goes wrong.
         time.sleep(2)
         page = requests.get(url)
-        # this describes what to do if an exception is thrown
-        #if page.status_code.__eq__(200):
-            #print("Page loaded successfully!")
-            #print(page.headers.get("content-type", 'unknown'))
         return page
     except Exception as e:
-        # get the exception information
         error_type, error_obj, error_info = sys.exc_info()
         # print the link that cause the problem
         print('ERROR FOR LINK:', url)
@@ -85,9 +82,9 @@ while search_date.date() != actual_date.date():
     soup = BeautifulSoup(page.text, "html.parser")
     numb_results = soup.find('span', attrs={'class': 'ergebnisse__anzahl'}).text.strip()
 
-    ''' if numb_results == 0:
+    if numb_results == 0:
         continue
     else:
-        extract_all()'''
+        print(extract_all(soup))
 
     url_2, search_date, new_date_format = load_next_day(soup, new_date_format)
