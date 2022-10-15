@@ -8,10 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import locale
 
-
-def modify_HTML(param):
-    """ TODO: implement"""
-    pass
+'''--- Methods ---'''
 
 
 def create_new_link(year, month, day=None):
@@ -30,19 +27,18 @@ def load_next_day(soup, is_new_format):
     try:
         if is_new_format:
             new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
-            return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date
+            return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
         else:
             new_date = datetime.strptime(date_string, '%B %Y') + relativedelta(months=1)
-            return create_new_link(new_date.date().year, new_date.date().month), new_date
+            return create_new_link(new_date.date().year, new_date.date().month), new_date, False
 
     except Exception as e:
 
         error_type, error_obj, error_info = sys.exc_info()
         print(error_obj)
         print('Date format has changed from "Month Year" to "Day. Month Year"!')
-        new_date_format = True
         new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
-        return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date
+        return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
 
 def extract_all():
@@ -51,48 +47,46 @@ def extract_all():
 
 
 def load_page(url_1, url_2):
-    ''' TODO: '''
+    """ TODO: """
     url = url_1 + url_2
     try:
         # this might throw an exception if something goes wrong.
+        time.sleep(2)
         page = requests.get(url)
         # this describes what to do if an exception is thrown
-        if page.status_code.__eq__(200):
-            print("Page loaded successfully!")
-        print(page.headers.get("content-type", 'unknown'))
+        #if page.status_code.__eq__(200):
+            #print("Page loaded successfully!")
+            #print(page.headers.get("content-type", 'unknown'))
         return page
     except Exception as e:
-
         # get the exception information
         error_type, error_obj, error_info = sys.exc_info()
-
         # print the link that cause the problem
         print('ERROR FOR LINK:', url)
-
         # print error info and line that threw the exception
         print(error_type, 'Line:', error_info.tb_lineno)
+
 
 '''--- Retrieval Session ---'''
 
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2021-12-01'
+url_2 = '?datum=2021-06-01'
 new_date_format = False
-
+actual_date = date.today()
+search_date =  datetime.strptime('Januar 2010', '%B %Y')
 '''code structure'''
-print(date.today())
 
+while search_date is not actual_date:
 
-while date.date() is not date.today():
-    
     page = load_page(url_1, url_2)
     soup = BeautifulSoup(page.text, "html.parser")
     numb_results = soup.find('span', attrs={'class': 'ergebnisse__anzahl'}).text.strip()
-    
-    if numb_results == 0:
+
+    ''' if numb_results == 0:
         continue
     else:
-        extract_all()
+        extract_all()'''
 
-    url_2, date = load_next_day(soup, new_date_format)
+    url_2, search_date, new_date_format = load_next_day(soup, new_date_format)
