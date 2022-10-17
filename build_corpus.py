@@ -46,7 +46,7 @@ def load_next_day(soup, is_new_format):
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
 
-def extract_all(soup):
+def extract_article_links(soup):
     """ Takes Beautifulsoup object and extracts all article links on a webpage and returns them in a list."""
     block = soup.find_all('a', attrs={'class': 'teaser-xs__link'})
     links = []
@@ -54,9 +54,9 @@ def extract_all(soup):
         links.append(article_links['href'])
     return links
 
-def load_page(url_1, url_2):
+
+def load_page(url):
     """ Takes url as two parts strings and sends request to webpage."""
-    url = url_1 + url_2
     try:
         time.sleep(2)
         page = requests.get(url)
@@ -69,27 +69,56 @@ def load_page(url_1, url_2):
         print(error_type, 'Line:', error_info.tb_lineno)
 
 
+def retrieve_article_content(soup_object):
+    """ Takes an Beautifulsoup object and returns all written text as one string"""
+    article = soup_object.find('article', attrs={'class': 'container content-wrapper__group'})
+    topline = article.find('span', attrs={'class': 'seitenkopf__topline'}).text.strip()
+    headline = article.find('span', attrs={'class': 'seitenkopf__headline--text'}).text.strip()
+    title = topline + ' | ' + headline
+
+    text = ''
+    for para in article.find_all('p', attrs={'class': 'm-ten m-offset-one l-eight l-offset-two textabsatz columns twelve'}):
+        text = text + para.text.strip() + ' '
+    print(title)
+    return title, text
+
+
 '''--- Retrieval Session ---'''
 
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2022-10-14'
-new_date_format = False
-actual_date = datetime.strptime('15. Oktober 2022', '%d. %B %Y')
-search_date = datetime.strptime('14. Oktober 2022', '%d. %B %Y')
+url_2 = '?datum=2022-10-17'
+actual_date = datetime.strptime('18. Oktober 2022', '%d. %B %Y')
+search_date = datetime.strptime('17. Oktober 2022', '%d. %B %Y')
 
-'''code structure'''
+new_date_format = False
+all_article_links = {}
+
+''' retrieve all article links: '''
 
 while search_date.date() != actual_date.date():
 
-    page = load_page(url_1, url_2)
+    page = load_page(url_1 + url_2)
     soup = BeautifulSoup(page.text, "html.parser")
     numb_results = soup.find('span', attrs={'class': 'ergebnisse__anzahl'}).text.strip()
 
     if numb_results == 0:
         continue
     else:
-        print(extract_all(soup))
+        all_article_links[search_date.date()] = extract_article_links(soup)
 
     url_2, search_date, new_date_format = load_next_day(soup, new_date_format)
+
+'''
+--- how to access dictionary:
+retrieval_date = datetime.strptime('16. Oktober 2022', '%d. %B %Y').date()
+print(all_article_links.get(retrieval_date))'''
+
+''' retrieve article text from all article links'''
+
+for day in all_article_links:
+    for link in all_article_links[day]:
+        page = load_page(link)
+        soup = BeautifulSoup(page.text, 'html.parser')
+        retrieve_article_content(soup)
