@@ -45,14 +45,24 @@ def load_next_day(soup_object, is_new_format):
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
 
-def extract_article_links(soup_object, link):
+def extract_article_links(soup_object, url, index=2, more_articles=False):
     """ Takes Beautifulsoup object and extracts all article links on a webpage and returns them in a list."""
-
-    block = soup_object.find_all('a', attrs={'class': 'teaser-xs__link'})
+    first_page = soup_object.find_all('a', attrs={'class': 'teaser-xs__link'})
     links = []
-    for article_links in block:
+    for article_links in first_page:
         links.append(article_links['href'])
 
+    # too many articles for one page:
+    more_pages = soup_object.find('ul', attrs={'class': 'paginierung__liste'})
+    if more_pages.find('li', attrs={'class': 'next'}) is not None:
+        if more_articles:
+            next_page_url = url[:-1] + str(index)
+        else:
+            next_page_url = url + '&pageIndex=' + str(index)
+
+        next_page = load_page(next_page_url)
+        next_soup = BeautifulSoup(next_page.text, 'html.parser')
+        links.extend(extract_article_links(next_soup, next_page_url, index + 1, True))
     return links
 
 
@@ -106,9 +116,9 @@ def has_results(soup_object):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2005-01-01'
+url_2 = '?datum=2010-01-01'
 actual_date = datetime.strptime('18. Oktober 2021', '%d. %B %Y')
-search_date = datetime.strptime('17. Oktober 2020', '%d. %B %Y')
+search_date = datetime.strptime('1. Januar 2010', '%d. %B %Y')
 
 new_date_format = False
 article_links = []
@@ -119,13 +129,12 @@ while search_date.date() != actual_date.date():
     print(search_date.date())
     page = load_page(url_1 + url_2)
     soup = BeautifulSoup(page.text, "html.parser")
-    print("loaded archive page...")
-    print(has_results(soup))
+    # print("loaded archive page...")
 
     if has_results(soup):
         articles = []
-        article_links = extract_article_links(soup)
-        print('got all article links...')
+        article_links = extract_article_links(soup, url_1 + url_2)
+        # print('got all article links...')
         day_string = search_date.date().strftime('%Y-%m-%d')
 
         print('start extracting content from links...')
@@ -134,14 +143,9 @@ while search_date.date() != actual_date.date():
             link_soup = BeautifulSoup(link_page.text, 'html.parser')
             topline, headline, content = retrieve_article_content(link_soup)
             articles.append([topline, headline, content])
-        print('finished extraction... \n proceed to file saving...')
+        print('finished extraction... \nproceed to file saving...')
 
-        # save_content_to_csv(articles, day_string)
+        save_content_to_csv(articles, day_string)
         articles.clear()
 
     url_2, search_date, new_date_format = load_next_day(soup, new_date_format)
-
-'''
---- how to access dictionary:
-retrieval_date = datetime.strptime('16. Oktober 2022', '%d. %B %Y').date()
-print(all_article_links.get(retrieval_date))'''
