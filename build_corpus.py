@@ -21,13 +21,13 @@ def create_new_link(year, month, day=None):
         return '?datum=' + str(year) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2)
 
 
-def load_next_day(soup, is_new_format):
+def load_next_day(soup_object, is_new_format):
     """  Takes Beautifulsoup object and boolean which indicates the date format.
      Extracts the current date of the loaded webpage and increments it:\n
      - old date format: increment per one month
      - new date format: increment per one day
      Returns new link part containing the actualized date."""
-    date_string = soup.find('h2', attrs={'class': 'archive__headline'}).text
+    date_string = soup_object.find('h2', attrs={'class': 'archive__headline'}).text
 
     try:
         if is_new_format:
@@ -46,9 +46,9 @@ def load_next_day(soup, is_new_format):
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
 
-def extract_article_links(soup):
+def extract_article_links(soup_object):
     """ Takes Beautifulsoup object and extracts all article links on a webpage and returns them in a list."""
-    block = soup.find_all('a', attrs={'class': 'teaser-xs__link'})
+    block = soup_object.find_all('a', attrs={'class': 'teaser-xs__link'})
     links = []
     for article_links in block:
         links.append(article_links['href'])
@@ -56,7 +56,7 @@ def extract_article_links(soup):
 
 
 def load_page(url):
-    """ Takes url as two parts strings and sends request to webpage."""
+    """ Takes url as string and sends request to webpage."""
     try:
         time.sleep(2)
         page = requests.get(url)
@@ -72,12 +72,14 @@ def load_page(url):
 def retrieve_article_content(soup_object):
     """ Takes an Beautifulsoup object and returns all written text as one string"""
     article = soup_object.find('article', attrs={'class': 'container content-wrapper__group'})
+
     topline = article.find('span', attrs={'class': 'seitenkopf__topline'}).text.strip()
     headline = article.find('span', attrs={'class': 'seitenkopf__headline--text'}).text.strip()
     title = topline + ' | ' + headline
 
     text = ''
-    for para in article.find_all('p', attrs={'class': 'm-ten m-offset-one l-eight l-offset-two textabsatz columns twelve'}):
+    for para in article.find_all('p', attrs={'class': 'm-ten m-offset-one l-eight l-offset-two textabsatz columns '
+                                                      'twelve'}):
         text = text + para.text.strip() + ' '
     print(title)
     return title, text
