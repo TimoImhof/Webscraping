@@ -83,14 +83,16 @@ def load_page(url):
 def retrieve_article_content(soup_object):
     """ Takes an Beautifulsoup object and returns all written text as one string"""
     article = soup_object.find('article', attrs={'class': 'container content-wrapper__group'})
+    date = article.find('div', attrs={'class': 'metatextline'}).text.strip()
     topline = article.find('span', attrs={'class': 'seitenkopf__topline'}).text.strip()
     headline = article.find('span', attrs={'class': 'seitenkopf__headline--text'}).text.strip()
     text = ''
     for para in article.find_all('p', attrs={'class': 'm-ten m-offset-one l-eight l-offset-two textabsatz columns '
                                                       'twelve'}):
         text = text + para.text.strip() + ' '
-    print(topline + ' | ' + headline)
-    return topline, headline, text
+    print(date[7:] + ': ' + topline + ' | ' + headline)
+
+    return date[7:], topline, headline, text
 
 
 def save_content_to_csv(content, date):
@@ -116,16 +118,16 @@ def has_results(soup_object):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2010-01-01'
-actual_date = datetime.strptime('18. Oktober 2021', '%d. %B %Y')
-search_date = datetime.strptime('1. Januar 2010', '%d. %B %Y')
+url_2 = '?datum=2019-10-01'
+start_time_index = datetime.strptime('20. Oktober 2022', '%d. %B %Y')
+end_time_index = datetime.strptime('1. Oktober 2019', '%d. %B %Y')
 
 new_date_format = False
 article_links = []
 
 'retrieve all article links: '
 
-while search_date.date() != actual_date.date():
+while start_time_index.date() != end_time_index.date():
     print(search_date.date())
     page = load_page(url_1 + url_2)
     soup = BeautifulSoup(page.text, "html.parser")
@@ -141,8 +143,11 @@ while search_date.date() != actual_date.date():
         for link in article_links:
             link_page = load_page(link)
             link_soup = BeautifulSoup(link_page.text, 'html.parser')
-            topline, headline, content = retrieve_article_content(link_soup)
-            articles.append([topline, headline, content])
+            try:
+                date, topline, headline, content = retrieve_article_content(link_soup)
+                articles.append([date, topline, headline, content])
+            except Exception as e:
+                print('Other article format, this article will be skipped.')
         print('finished extraction... \nproceed to file saving...')
 
         save_content_to_csv(articles, day_string)
