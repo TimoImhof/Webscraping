@@ -10,14 +10,18 @@ import locale
 import csv
 
 
-def get_links(soup, tag_type, class_name):
-    """ Takes Beautifulsoup object, and two objects of type string and returns list contaning all strings (url) of
-    specified tag and class. """
+def get_links(soup):
+    """ Takes Beautifulsoup object, and returns list contaning all url of that contain a substring 'article. """
     links = []
-    overview = soup.find('div', attrs={'class': 'volume-overview'})
-    for link in overview.find_all(tag_type, attrs={'class': class_name}):
-        links.append(link['href'])
-    return links
+    overview = soup.find('div', attrs={'class': 'Body'})
+    for link in overview.find_all('a'):
+        links.append('https://apnews.com' + link['href'])
+    links = list(set(links))
+    article_links = []
+    for link in links:
+        if 'article' in link:
+            article_links.append(link)
+    return article_links
 
 
 def get_soup(url):
@@ -29,3 +33,18 @@ def get_soup(url):
     except Exception as e:
         print('Could not load page!')
         return -1
+
+
+def get_search_date():
+    """ TODO: implement"""
+    pass
+
+
+def get_article_content(url):
+    """ TODO: implement"""
+    pass
+
+
+soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
+links = get_links(soup)
+print(len(links))
