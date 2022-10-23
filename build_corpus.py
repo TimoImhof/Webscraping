@@ -31,9 +31,13 @@ def load_next_day(soup_object, is_new_format):
     try:
         if is_new_format:
             new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
+            print('new date is:')
+            print(new_date)
             return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
         else:
             new_date = datetime.strptime(date_string, '%B %Y') + relativedelta(months=1)
+            print('new date is:')
+            print(new_date)
             return create_new_link(new_date.date().year, new_date.date().month), new_date, False
 
     except Exception as e:
@@ -60,24 +64,20 @@ def extract_article_links(soup_object, url, index=2, more_articles=False):
         else:
             next_page_url = url + '&pageIndex=' + str(index)
 
-        next_page = load_page(next_page_url)
-        next_soup = BeautifulSoup(next_page.text, 'html.parser')
+        next_soup = get_soup(next_page_url)
         links.extend(extract_article_links(next_soup, next_page_url, index + 1, True))
     return links
 
 
-def load_page(url):
-    """ Takes url as string and sends request to webpage."""
+def get_soup(url):
+    """ Takes an url as string and returns a Beautifulsoup object from this url."""
     try:
         time.sleep(2)
         page = requests.get(url)
-        return page
+        return BeautifulSoup(page.text, 'html.parser')
     except Exception as e:
-        error_type, error_obj, error_info = sys.exc_info()
-        # print the link that cause the problem
-        print('ERROR FOR LINK:', url)
-        # print error info and line that threw the exception
-        print(error_type, 'Line:', error_info.tb_lineno)
+        print('Could not load page!')
+        return -1
 
 
 def retrieve_article_content(soup_object):
@@ -118,39 +118,38 @@ def has_results(soup_object):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2019-10-01'
-start_time_index = datetime.strptime('20. Oktober 2022', '%d. %B %Y')
-end_time_index = datetime.strptime('1. Oktober 2019', '%d. %B %Y')
+url_2 = '?datum=2021-11-30'
+start_time_index = datetime.strptime('30. November 2021', '%d. %B %Y')
+end_time_index = datetime.strptime('24. Oktober 2022', '%d. %B %Y')
 
-new_date_format = False
+is_new_date_format = False
 article_links = []
 
 'retrieve all article links: '
 
 while start_time_index.date() != end_time_index.date():
-    print(search_date.date())
-    page = load_page(url_1 + url_2)
-    soup = BeautifulSoup(page.text, "html.parser")
+    soup = get_soup(url_1 + url_2)
     # print("loaded archive page...")
 
-    if has_results(soup):
+    if soup != -1 and has_results(soup):
         articles = []
         article_links = extract_article_links(soup, url_1 + url_2)
         # print('got all article links...')
-        day_string = search_date.date().strftime('%Y-%m-%d')
+        day_string = start_time_index.date().strftime('%Y-%m-%d')
 
         print('start extracting content from links...')
         for link in article_links:
-            link_page = load_page(link)
-            link_soup = BeautifulSoup(link_page.text, 'html.parser')
-            try:
-                date, topline, headline, content = retrieve_article_content(link_soup)
-                articles.append([date, topline, headline, content])
-            except Exception as e:
-                print('Other article format, this article will be skipped.')
+            link_soup = get_soup(link)
+            if link_soup != -1:
+                try:
+                    date, topline, headline, content = retrieve_article_content(link_soup)
+                    articles.append([date, topline, headline, content])
+                except Exception as e:
+                    print(
+                        'Could not extract article with standard pattern.')
         print('finished extraction... \nproceed to file saving...')
 
         save_content_to_csv(articles, day_string)
         articles.clear()
 
-    url_2, search_date, new_date_format = load_next_day(soup, new_date_format)
+    url_2, start_time_index, is_new_date_format = load_next_day(soup, is_new_date_format)
