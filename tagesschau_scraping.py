@@ -91,7 +91,7 @@ def retrieve_article_content(soup_object):
                                                       'twelve'}):
         text = text + para.text.strip() + ' '
     print(date[7:] + ': ' + topline + ' | ' + headline)
-
+    print(text)
     return date[7:], topline, headline, text
 
 

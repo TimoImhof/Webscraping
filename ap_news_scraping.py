@@ -39,12 +39,24 @@ def get_search_date():
     """ TODO: implement"""
     pass
 
-
-def get_article_content(url):
+def get_article_content_and_date(url):
     """ TODO: implement"""
-    pass
-
+    soup = get_soup(url)
+    timestamp = soup.find('span', attrs={'data-key': 'timestamp'})['title']
+    headline_container = soup.find('div', attrs={'data-key': 'card-headline'})
+    headline = headline_container.find('h1').text.strip()
+    content = soup.find('div', attrs={'class': 'Article', 'data-key': 'article'})
+    text = ''
+    for phrase in content.find_all('p'):
+        text = text + ' ' + phrase.text.strip()
+    return timestamp, text, headline
 
 soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
 links = get_links(soup)
-print(len(links))
+
+for link in links:
+    print(link)
+    timestamp, text, headline = get_article_content_and_date(link)
+    print(timestamp + ' | ' + headline)
+
+
