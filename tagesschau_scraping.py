@@ -98,7 +98,7 @@ def save_content_to_csv(content, date):
     """ Takes list of lists as content and string as date and writes content to new csv file named after string."""
     header = ['date', 'topline', 'headline', 'content']
     directory = 'C:\\Users\\Timo\\PycharmProjects\\Webscraping\\Tagesschau_archive\\'
-    with open(file=directory + 'tagesschau_' + date + '.csv', mode='x', encoding='UTF8') as f:
+    with open(file=directory + date + '_Tagesschau' + '.csv', mode='x', encoding='UTF8') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for article in content:
