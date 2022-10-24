@@ -91,19 +91,18 @@ def retrieve_article_content(soup_object):
                                                       'twelve'}):
         text = text + para.text.strip() + ' '
     print(date[7:] + ': ' + topline + ' | ' + headline)
-    print(text)
     return date[7:], topline, headline, text
 
 
 def save_content_to_csv(content, date):
     """ Takes list of lists as content and string as date and writes content to new csv file named after string."""
-    header = ['topline', 'headline', 'content']
+    header = ['date', 'topline', 'headline', 'content']
     directory = 'C:\\Users\\Timo\\PycharmProjects\\Webscraping\\Tagesschau_archive\\'
     with open(file=directory + 'tagesschau_' + date + '.csv', mode='x', encoding='UTF8') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for article in content:
-            writer.writerow([article[0], article[1], article[2]])
+            writer.writerow([article[0], article[1], article[2], article[3]])
 
 
 def has_results(soup_object):
@@ -118,8 +117,8 @@ def has_results(soup_object):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2022-08-01'
-start_time_index = datetime.strptime('1. August 2022', '%d. %B %Y')
+url_2 = '?datum=2005-01-01'
+start_time_index = datetime.strptime('1. Januar 2005', '%d. %B %Y')
 end_time_index = datetime.strptime('25. Oktober 2022', '%d. %B %Y')
 
 is_new_date_format = False
