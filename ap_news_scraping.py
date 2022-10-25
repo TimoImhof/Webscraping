@@ -48,35 +48,26 @@ def get_article_content_and_date(url):
         text = text + ' ' + phrase.text.strip()
     return timestamp, headline, text
 
-
-def save_content_to_csv(content, date):
-    """ Takes list of lists as content and string as date and writes content to new csv file named after string."""
-    header = ['date', 'topline', 'headline', 'content']
-    directory = 'C:\\Users\\Timo\\PycharmProjects\\Webscraping\\Tagesschau_archive\\'
-    with open(file=directory + 'AP_News_' + date + '.csv', mode='x', encoding='UTF8') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        for article in content:
-            writer.writerow([article[0], article[1], article[2], article[3]])
-
-
-def update_csv(article, date):
+def save_article_to_csv(timestamp, headline, text):
     """ TODO: write  """
-    directory = os.path.join('C:\\Users\\Timo\\PycharmProjects\\Webscraping\\AP_News_archive')
+    date = timestamp[0:10]
+    directory = os.path.join(os.getcwd() + '/AP_News_archive')  # get current directory
+
+    #article = {'timestamp': [timestamp[0:16]], 'headline': [headline], 'text': [text]}
+    article_frame = pd.DataFrame({'headline': headline, 'text': text}, index = [timestamp[0:16]])
+    csv_path = directory + '/' + date
+    article_frame.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path))
+    '''
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith('_AP_News.csv'):
-                f = open((file, 'w'))
-                # TODO: implement
-                f.close()
+            if file.endswith('_Tagesschau.csv') and date in file:
+                content = pd.read_csv(directory + '/' + file)
+                print(content.date)
+                df = pd.DataFrame['date', 'title', 'content']
+                csv_path = directory + '/' + file
+                df.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path))'''
 
 
-def create_new_csv(header, date):
-    """ TODO: implement """
-    directory = 'C:\\Users\\Timo\\PycharmProjects\\Webscraping\\AP_News_archive\\'
-    with open(file=directory + date + '_AP_News' + '.csv', mode='x', encoding='UTF8') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
 
 
 soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
@@ -85,8 +76,4 @@ links = get_links(soup)
 for link in links:
     timestamp, headline, text = get_article_content_and_date(link)
     print(timestamp[0:16] + ' | ' + headline)
-    try:
-        update_csv([headline, text], timestamp[0:16])
-    except Exception as e:
-        print('No such file found. Create new one:')
-        create_new_csv([timestamp[0:16], headline, text], timestamp[0:10])
+    save_article_to_csv(timestamp, headline, text)
