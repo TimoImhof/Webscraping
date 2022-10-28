@@ -48,32 +48,37 @@ def get_article_content_and_date(url):
         text = text + ' ' + phrase.text.strip()
     return timestamp, headline, text
 
+
 def save_article_to_csv(timestamp, headline, text):
     """ TODO: write  """
     date = timestamp[0:10]
+    time = timestamp[0:16]
     directory = os.path.join(os.getcwd() + '/AP_News_archive')  # get current directory
-
-    #article = {'timestamp': [timestamp[0:16]], 'headline': [headline], 'text': [text]}
-    article_frame = pd.DataFrame({'headline': headline, 'text': text}, index = [timestamp[0:16]])
     csv_path = directory + '/' + date
-    article_frame.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path))
-    '''
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.endswith('_Tagesschau.csv') and date in file:
-                content = pd.read_csv(directory + '/' + file)
-                print(content.date)
-                df = pd.DataFrame['date', 'title', 'content']
-                csv_path = directory + '/' + file
-                df.to_csv(csv_path, mode='a', header=not os.path.exists(csv_path))'''
 
-
+    if not os.path.exists(csv_path):
+        new_article_frame = pd.DataFrame({'time': time, 'headline': headline, 'text': text}, index=[0])
+        new_article_frame.to_csv(csv_path, index=False, header=True)
+        print('created new file for date: ' + date)
+    else:
+        print('file with date already exists...')
+        old_article_frame = pd.read_csv(csv_path)
+        latest_index = old_article_frame.index.values.max()
+        if time in old_article_frame.get('time').values:
+            print('article already contained in file...')
+        else:
+            print('append article to existing file...')
+            new_row = pd.DataFrame([time, headline, text], index=[latest_index + 1])
+            new_row.to_csv(csv_path, mode='a' , index=False, header = False)
 
 
 soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
 links = get_links(soup)
 
 for link in links:
-    timestamp, headline, text = get_article_content_and_date(link)
-    print(timestamp[0:16] + ' | ' + headline)
-    save_article_to_csv(timestamp, headline, text)
+    try:
+        timestamp, headline, text = get_article_content_and_date(link)
+        print(timestamp[0:16] + ' | ' + headline)
+        save_article_to_csv(timestamp, headline, text)
+    except Exception as e:
+        print(str(e))
