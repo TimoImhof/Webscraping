@@ -117,9 +117,9 @@ def has_results(soup_object):
 locale.setlocale(locale.LC_TIME, "de_DE")
 
 url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2005-01-01'
-start_time_index = datetime.strptime('1. Januar 2005', '%d. %B %Y')
-end_time_index = datetime.strptime('25. Oktober 2022', '%d. %B %Y')
+url_2 = '?datum=2022-01-01'
+start_time_index = datetime.strptime('1. Januar 2022', '%d. %B %Y')
+end_time_index = datetime.strptime('27. Oktober 2022', '%d. %B %Y')
 
 is_new_date_format = False
 article_links = []
