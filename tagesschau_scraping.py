@@ -114,7 +114,7 @@ def has_results(soup_object):
 
 '''--- Retrieval Session ---'''
 
-locale.setlocale(locale.LC_TIME, "de_DE")
+locale.setlocale(locale.LC_TIME, "de_DE")  # important for datetime library because of "Januar" != "January"
 
 url_1 = 'https://www.tagesschau.de/archiv/'
 url_2 = '?datum=2022-01-01'
@@ -124,20 +124,18 @@ end_time_index = datetime.strptime('27. Oktober 2022', '%d. %B %Y')
 is_new_date_format = False
 article_links = []
 
-'retrieve all article links: '
-
-while start_time_index.date() != end_time_index.date():
-    soup = get_soup(url_1 + url_2)
+while start_time_index.date() != end_time_index.date():  # while current date is not reached
+    soup = get_soup(url_1 + url_2)  # get content of archive page listing all articles
     # print("loaded archive page...")
 
-    if soup != -1 and has_results(soup):
+    if soup != -1 and has_results(soup):  # if month or day has no articles proceed with next one
         articles = []
         article_links = extract_article_links(soup, url_1 + url_2)
         # print('got all article links...')
         day_string = start_time_index.date().strftime('%Y-%m-%d')
 
         print('start extracting content from links...')
-        for link in article_links:
+        for link in article_links:  # for each article extract date, title and content
             link_soup = get_soup(link)
             if link_soup != -1:
                 try:
@@ -148,7 +146,7 @@ while start_time_index.date() != end_time_index.date():
                         'Could not extract article with standard pattern.')
         print('finished extraction... \nproceed to file saving...')
 
-        save_content_to_csv(articles, day_string)
+        save_content_to_csv(articles, day_string)  # for this month/day create new .csv file and save content
         articles.clear()
 
     url_2, start_time_index, is_new_date_format = load_next_day(soup, is_new_date_format)
