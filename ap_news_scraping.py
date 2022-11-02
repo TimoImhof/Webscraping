@@ -51,8 +51,8 @@ def get_article_content_and_date(url):
 
 def save_article_to_csv(timestamp, headline, text):
     """ TODO: write  """
-    date = timestamp[0:10]
     time = timestamp[0:16]
+    date = timestamp[0:10]
     directory = os.path.join(os.getcwd() + '/AP_News_archive')  # get current directory
     csv_path = directory + '/' + date
 
@@ -62,23 +62,28 @@ def save_article_to_csv(timestamp, headline, text):
         print('created new file for date: ' + date)
     else:
         print('file with date already exists...')
-        old_article_frame = pd.read_csv(csv_path)
-        latest_index = old_article_frame.index.values.max()
-        if time in old_article_frame.get('time').values:
+        existing_csv = pd.read_csv(csv_path)
+        if time in existing_csv.get('time').values:
             print('article already contained in file...')
         else:
             print('append article to existing file...')
-            new_row = pd.DataFrame([time, headline, text], index=[latest_index + 1])
-            new_row.to_csv(csv_path, mode='a' , index=False, header = False)
+            new_row = pd.DataFrame({'time': time, 'headline': headline, 'text': text}, index=[0])
+            new_row.to_csv(csv_path, mode='a', index=False, header=False)
 
 
 soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
 links = get_links(soup)
+
+timedata = []
 
 for link in links:
     try:
         timestamp, headline, text = get_article_content_and_date(link)
         print(timestamp[0:16] + ' | ' + headline)
         save_article_to_csv(timestamp, headline, text)
+        timedata.append(timestamp[0:16])
     except Exception as e:
+        print('Exception thrown:')
         print(str(e))
+
+print(timedata)
