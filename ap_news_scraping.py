@@ -1,22 +1,18 @@
-import time
-import urllib.request, sys
-from datetime import datetime, timedelta, date
-from dateutil.relativedelta import relativedelta
-from bs4 import BeautifulSoup
-import requests
-import pandas as pd
-import matplotlib.pyplot as plt
 import os
-import csv
+import time
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 
 def get_links(soup):
-    """ Takes Beautifulsoup object, and returns list contaning all url of that contain a substring 'article. """
+    """ Takes Beautifulsoup object, and returns list contaning all urls, which contain the substring 'article',
+    to filter unnecessary urls. """
     links = []
     overview = soup.find('div', attrs={'class': 'Body'})
     for link in overview.find_all('a'):
         links.append('https://apnews.com' + link['href'])
-    links = list(set(links))
+    links = list(set(links))  # remove duplicates
     article_links = []
     for link in links:
         if 'article' in link:
@@ -25,7 +21,7 @@ def get_links(soup):
 
 
 def get_soup(url):
-    """ Takes an url as string and returns a Beautifulsoup object from this url."""
+    """ Takes an url as string, sends a get request and returns a Beautifulsoup object from this url."""
     try:
         time.sleep(2)
         page = requests.get(url)
@@ -36,12 +32,10 @@ def get_soup(url):
 
 
 def get_article_content_and_date(url):
-    """ TODO: Takes a string (url) and extracts content and date from this url.
-    Returns timestamp, headline and text of website."""
+    """ Takes a string (url) and extracts and returns content and metadata."""
     soup = get_soup(url)
     timestamp = soup.find('span', attrs={'data-key': 'timestamp'})['title']
-    headline_container = soup.find('div', attrs={'data-key': 'card-headline'})
-    headline = headline_container.find('h1').text.strip()
+    headline = soup.find('div', attrs={'data-key': 'card-headline'}).find('h1').text.strip()
     content = soup.find('div', attrs={'class': 'Article', 'data-key': 'article'})
     text = ''
     for phrase in content.find_all('p'):
@@ -50,7 +44,9 @@ def get_article_content_and_date(url):
 
 
 def save_article_to_csv(timestamp, headline, text):
-    """ TODO: write  """
+    """ Save content to .csv file with rows timestamp, headline and text.
+     Check if file already exists, if not create a new one with header and content as first column.
+     Check if article already exists in existing file, if not only append content as new column."""
     time = timestamp[0:16]
     date = timestamp[0:10]
     directory = os.path.join(os.getcwd() + '/AP_News_archive')  # get current directory
@@ -63,7 +59,7 @@ def save_article_to_csv(timestamp, headline, text):
     else:
         print('file with date already exists...')
         existing_csv = pd.read_csv(csv_path)
-        if time in existing_csv.get('time').values:
+        if headline in existing_csv.get('headline').values:
             print('article already contained in file...')
         else:
             print('append article to existing file...')
@@ -71,7 +67,8 @@ def save_article_to_csv(timestamp, headline, text):
             new_row.to_csv(csv_path, mode='a', index=False, header=False)
 
 
-soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')
+""" Retrieval session: """
+soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')  # don't change this link
 links = get_links(soup)
 
 timedata = []
@@ -85,5 +82,3 @@ for link in links:
     except Exception as e:
         print('Exception thrown:')
         print(str(e))
-
-print(timedata)
