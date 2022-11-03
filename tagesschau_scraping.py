@@ -1,3 +1,4 @@
+import os
 import time
 import urllib.request, sys
 from datetime import datetime, timedelta, date
@@ -45,6 +46,7 @@ def load_next_day(soup_object, is_new_format):
         error_type, error_obj, error_info = sys.exc_info()
         print(error_obj)
         print('Date format has changed from "Month Year" to "Day. Month Year"!')
+        print(date_string)
         new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
@@ -91,14 +93,14 @@ def retrieve_article_content(soup_object):
                                                       'twelve'}):
         text = text + para.text.strip() + ' '
     print(date[7:] + ': ' + topline + ' | ' + headline)
-    return date[7:], topline, headline, text
+    return date[7:23], topline, headline, text
 
 
 def save_content_to_csv(content, date):
     """ Takes list of lists as content and string as date and writes content to new csv file named after string."""
     header = ['date', 'topline', 'headline', 'content']
-    directory = 'C:\\Users\\Timo\\PycharmProjects\\Webscraping\\Tagesschau_archive\\'
-    with open(file=directory + date + '_Tagesschau' + '.csv', mode='x', encoding='UTF8') as f:
+    file_name = os.path.join(os.getcwd(), 'Tagesschau_archive', date + '_Tagesschau' + '.csv')
+    with open(file=file_name, mode='x', encoding='UTF8') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for article in content:
@@ -112,9 +114,15 @@ def has_results(soup_object):
     return int(numb_results) != 0
 
 
+def check_for_directory(path):
+    """ Check if directory specified by parameter path already exists, if not create it."""
+    if not os.path.exists(path):
+        os.mkdir(path)
+
 '''--- Retrieval Session ---'''
 
-locale.setlocale(locale.LC_TIME, "de_DE")  # important for datetime library because of "Januar" != "January"
+print(locale.getlocale())
+locale.setlocale(locale.LC_TIME, "de_DE.utf8")  # important for datetime library because of "Januar" != "January"
 
 url_1 = 'https://www.tagesschau.de/archiv/'
 url_2 = '?datum=2022-01-01'
@@ -123,6 +131,9 @@ end_time_index = datetime.strptime('27. Oktober 2022', '%d. %B %Y')
 
 is_new_date_format = False
 article_links = []
+
+directory = os.path.join(os.getcwd(), 'Tagesschau_archive')  # get current directory
+check_for_directory(directory)
 
 while start_time_index.date() != end_time_index.date():  # while current date is not reached
     soup = get_soup(url_1 + url_2)  # get content of archive page listing all articles

@@ -49,8 +49,9 @@ def save_article_to_csv(timestamp, headline, text):
      Check if article already exists in existing file, if not only append content as new column."""
     time = timestamp[0:16]
     date = timestamp[0:10]
-    directory = os.path.join(os.getcwd() + '/AP_News_archive')  # get current directory
-    csv_path = directory + '/' + date
+    directory = os.path.join(os.getcwd(), 'AP_News_archive')  # get current directory
+    check_for_directory(directory)
+    csv_path = os.path.join(directory, date)
 
     if not os.path.exists(csv_path):
         new_article_frame = pd.DataFrame({'time': time, 'headline': headline, 'text': text}, index=[0])
@@ -67,18 +68,20 @@ def save_article_to_csv(timestamp, headline, text):
             new_row.to_csv(csv_path, mode='a', index=False, header=False)
 
 
+def check_for_directory(path):
+    """ Check if directory specified by parameter path already exists, if not create it."""
+    if not os.path.exists(path):
+        os.mkdir(path)
+
 """ Retrieval session: """
 soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')  # don't change this link
 links = get_links(soup)
-
-timedata = []
 
 for link in links:
     try:
         timestamp, headline, text = get_article_content_and_date(link)
         print(timestamp[0:16] + ' | ' + headline)
         save_article_to_csv(timestamp, headline, text)
-        timedata.append(timestamp[0:16])
     except Exception as e:
         print('Exception thrown:')
         print(str(e))
