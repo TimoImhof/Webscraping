@@ -127,7 +127,9 @@ def check_for_directory(path):
 
 
 def start_retrieval(date=datetime.today().strftime('%Y-%m-%d'), make_full_retrieval=False):
-    """ TODO """
+    """ Start a retrieval session. If not specified, retrieve articles for only the latest date.
+      When make_full_retrieval is set to true, all articles in the archive from 01.01.2010 will be scraped.
+      Otherwise also a costum date can be used with the format '2010-01-01' as 'year-month-day'."""
     locale.setlocale(locale.LC_TIME, "de_DE.utf8")  # important for datetime library because of "Januar" != "January"
     url_1 = 'https://www.tagesschau.de/archiv/'
     if make_full_retrieval:

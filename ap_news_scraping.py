@@ -75,6 +75,7 @@ def check_for_directory(path):
 
 
 def start_retrieval():
+    """ Start retrieval session and extract content of all available articles on the APNews business website."""
     soup = get_soup(
         'https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')  # don't change this link
     links = get_links(soup)
