@@ -73,15 +73,16 @@ def check_for_directory(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
-""" Retrieval session: """
-soup = get_soup('https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')  # don't change this link
-links = get_links(soup)
 
-for link in links:
-    try:
-        timestamp, headline, text = get_article_content_and_date(link)
-        print(timestamp[0:16] + ' | ' + headline)
-        save_article_to_csv(timestamp, headline, text)
-    except Exception as e:
-        print('Exception thrown:')
-        print(str(e))
+def start_retrieval():
+    soup = get_soup(
+        'https://apnews.com/hub/business?utm_source=apnewsnav&utm_medium=navigation')  # don't change this link
+    links = get_links(soup)
+    for link in links:
+        try:
+            timestamp, headline, text = get_article_content_and_date(link)
+            print(timestamp[0:16] + ' | ' + headline)
+            save_article_to_csv(timestamp, headline, text)
+        except Exception as e:
+            print('Exception thrown:')
+            print(str(e))
