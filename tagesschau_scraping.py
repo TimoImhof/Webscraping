@@ -1,16 +1,12 @@
-import os
-import time
-import urllib.request, sys
-from datetime import datetime, timedelta, date
-from dateutil.relativedelta import relativedelta
-from bs4 import BeautifulSoup
-import requests
-import pandas as pd
-import matplotlib.pyplot as plt
 import locale
-import csv
+import os
+import sys
+import time
+from datetime import datetime, timedelta
 
-'''--- Methods ---'''
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 
 def create_new_link(year, month, day=None):
@@ -21,7 +17,7 @@ def create_new_link(year, month, day=None):
         return '?datum=' + str(year) + '-' + str(month).zfill(2) + '-' + str(day).zfill(2)
 
 
-def load_next_day(soup_object, is_new_format):
+def load_next_page(soup_object, is_new_format):
     """  Takes Beautifulsoup object and boolean which indicates the date format.
      Extracts the current date of the loaded webpage and increments it:\n
      - old date format: increment per one month
@@ -32,21 +28,14 @@ def load_next_day(soup_object, is_new_format):
     try:
         if is_new_format:
             new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
-            print('new date is:')
-            print(new_date)
             return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
         else:
-            new_date = datetime.strptime(date_string, '%B %Y') + relativedelta(months=1)
-            print('new date is:')
-            print(new_date)
+            new_date = datetime.strptime(date_string, '%B %Y') + timedelta(months=1)
             return create_new_link(new_date.date().year, new_date.date().month), new_date, False
-
     except Exception as e:
-
         error_type, error_obj, error_info = sys.exc_info()
         print(error_obj)
         print('Date format has changed from "Month Year" to "Day. Month Year"!')
-        print(date_string)
         new_date = datetime.strptime(date_string, '%d. %B %Y') + timedelta(days=1)
         return create_new_link(new_date.date().year, new_date.date().month, new_date.date().day), new_date, True
 
@@ -96,15 +85,32 @@ def retrieve_article_content(soup_object):
     return date[7:23], topline, headline, text
 
 
-def save_content_to_csv(content, date):
-    """ Takes list of lists as content and string as date and writes content to new csv file named after string."""
-    header = ['date', 'topline', 'headline', 'content']
-    file_name = os.path.join(os.getcwd(), 'Tagesschau_archive', date + '_Tagesschau' + '.csv')
-    with open(file=file_name, mode='x', encoding='UTF8') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        for article in content:
-            writer.writerow([article[0], article[1], article[2], article[3]])
+def save_article_to_csv(date_filename, article):
+    """ Save content to .csv file with rows timestamp, headline and text.
+     Check if file already exists, if not create a new one with header and content as first column.
+     Check if article already exists in existing file, if not only append content as new column."""
+
+    directory = os.path.join(os.getcwd(), 'Tagesschau_archive')  # get current directory
+    check_for_directory(directory)
+    csv_path = os.path.join(directory, date_filename)
+
+    if not os.path.exists(csv_path):
+        new_article_frame = pd.DataFrame(
+            {'date': article[0], 'topline': article[1], 'headline': article[2], 'text': article[3]},
+            index=[0])
+        new_article_frame.to_csv(csv_path, index=False, header=True)
+        print('created new file for date: ' + date_filename)
+    else:
+        print('file with date already exists...')
+        existing_csv = pd.read_csv(csv_path)
+        if article[2] in existing_csv.get('headline').values:
+            print('article already contained in file...')
+        else:
+            print('append article to existing file...')
+            new_row = pd.DataFrame(
+                {'date': article[0], 'topline': article[1], 'headline': article[2], 'text': article[3]},
+                index=[0])
+            new_row.to_csv(csv_path, mode='a', index=False, header=False)
 
 
 def has_results(soup_object):
@@ -119,45 +125,36 @@ def check_for_directory(path):
     if not os.path.exists(path):
         os.mkdir(path)
 
-'''--- Retrieval Session ---'''
 
-print(locale.getlocale())
-locale.setlocale(locale.LC_TIME, "de_DE.utf8")  # important for datetime library because of "Januar" != "January"
-
-url_1 = 'https://www.tagesschau.de/archiv/'
-url_2 = '?datum=2022-01-01'
-start_time_index = datetime.strptime('1. Januar 2022', '%d. %B %Y')
-end_time_index = datetime.strptime('27. Oktober 2022', '%d. %B %Y')
-
-is_new_date_format = False
-article_links = []
-
-directory = os.path.join(os.getcwd(), 'Tagesschau_archive')  # get current directory
-check_for_directory(directory)
-
-while start_time_index.date() != end_time_index.date():  # while current date is not reached
-    soup = get_soup(url_1 + url_2)  # get content of archive page listing all articles
-    # print("loaded archive page...")
-
-    if soup != -1 and has_results(soup):  # if month or day has no articles proceed with next one
-        articles = []
-        article_links = extract_article_links(soup, url_1 + url_2)
-        # print('got all article links...')
-        day_string = start_time_index.date().strftime('%Y-%m-%d')
-
-        print('start extracting content from links...')
-        for link in article_links:  # for each article extract date, title and content
-            link_soup = get_soup(link)
-            if link_soup != -1:
-                try:
-                    date, topline, headline, content = retrieve_article_content(link_soup)
-                    articles.append([date, topline, headline, content])
-                except Exception as e:
-                    print(
-                        'Could not extract article with standard pattern.')
-        print('finished extraction... \nproceed to file saving...')
-
-        save_content_to_csv(articles, day_string)  # for this month/day create new .csv file and save content
-        articles.clear()
-
-    url_2, start_time_index, is_new_date_format = load_next_day(soup, is_new_date_format)
+def start_retrieval(date=datetime.today().strftime('%Y-%m-%d'), make_full_retrieval=False):
+    """ TODO """
+    locale.setlocale(locale.LC_TIME, "de_DE.utf8")  # important for datetime library because of "Januar" != "January"
+    url_1 = 'https://www.tagesschau.de/archiv/'
+    if make_full_retrieval:
+        url_2 = '?datum=2010-01-01'
+    else:
+        url_2 = '?datum=' + date
+    current = datetime.strptime(date, '%Y-%m-%d')
+    latest = datetime.today() + timedelta(days=1)
+    is_new_date_format = False
+    directory = os.path.join(os.getcwd(), 'Tagesschau_archive')  # build path were to save extracted data
+    check_for_directory(directory)  # check if directory already exists
+    while current.date() != latest.date():
+        print(f'Current date= {current.date()}')
+        soup = get_soup(url_1 + url_2)  # get content of archive page listing all articles
+        if soup != -1 and has_results(soup):  # if month or day has no articles proceed with next one
+            article_links = extract_article_links(soup, url_1 + url_2)
+            print('successfully loaded archive page and extracted article links...')
+            date_filename = current.date().strftime('%Y-%m-%d')
+            print('start extracting content from links...')
+            for link in article_links:  # for each article extract date, topline, headline and content and save to csv
+                link_soup = get_soup(link)
+                if link_soup != -1:
+                    try:
+                        content = retrieve_article_content(link_soup)
+                        save_article_to_csv(date_filename, content)
+                    except Exception as e:
+                        print(
+                            'Could not extract article with standard pattern.\n Proceed with next one...')
+            print('finished extraction and content saving...')
+        url_2, current, is_new_date_format = load_next_page(soup, is_new_date_format)
